@@ -65,11 +65,11 @@ enum {
 static const USBDescStrings desc_strings = {
     [STR_MANUFACTURER]     = "QEMU",
     [STR_PRODUCT_MOUSE]    = "QEMU USB Mouse",
-    [STR_PRODUCT_TABLET]   = "QEMU USB Tablet",
+    [STR_PRODUCT_TABLET]   = "QEMU USB Touch",
     [STR_PRODUCT_KEYBOARD] = "QEMU USB Keyboard",
     [STR_SERIAL_COMPAT]    = "42",
     [STR_CONFIG_MOUSE]     = "HID Mouse",
-    [STR_CONFIG_TABLET]    = "HID Tablet",
+    [STR_CONFIG_TABLET]    = "HID Touch",
     [STR_CONFIG_KEYBOARD]  = "HID Keyboard",
     [STR_SERIAL_MOUSE]     = "89126",
     [STR_SERIAL_TABLET]    = "28754",
@@ -295,7 +295,7 @@ static const USBDescDevice desc_device_mouse2 = {
 };
 
 static const USBDescDevice desc_device_tablet = {
-    .bcdUSB                        = 0x0100,
+    .bcdUSB                        = 0x100,
     .bMaxPacketSize0               = 8,
     .bNumConfigurations            = 1,
     .confs = (USBDescConfig[]) {
@@ -397,8 +397,8 @@ static const USBDesc desc_mouse2 = {
 
 static const USBDesc desc_tablet = {
     .id = {
-        .idVendor          = 0x0627,
-        .idProduct         = 0x0001,
+        .idVendor          = 0x048E,
+        .idProduct         = 0x048F,
         .bcdDevice         = 0,
         .iManufacturer     = STR_MANUFACTURER,
         .iProduct          = STR_PRODUCT_TABLET,
@@ -411,8 +411,8 @@ static const USBDesc desc_tablet = {
 
 static const USBDesc desc_tablet2 = {
     .id = {
-        .idVendor          = 0x0627,
-        .idProduct         = 0x0001,
+        .idVendor          = 0x048E,
+        .idProduct         = 0x048F,
         .bcdDevice         = 0,
         .iManufacturer     = STR_MANUFACTURER,
         .iProduct          = STR_PRODUCT_TABLET,
@@ -483,23 +483,44 @@ static const uint8_t qemu_mouse_hid_report_descriptor[] = {
     0xc0,		/* End Collection */
 };
 
+#define REPORTID_TOUCH 0x04
+#define CONTACT_COUNT_MAXIMUM 2
+
 static const uint8_t qemu_tablet_hid_report_descriptor[] = {
-    0x05, 0x01,		/* Usage Page (Generic Desktop) */
-    0x09, 0x02,		/* Usage (Mouse) */
-    0xa1, 0x01,		/* Collection (Application) */
-    0x09, 0x01,		/*   Usage (Pointer) */
-    0xa1, 0x00,		/*   Collection (Physical) */
-    0x05, 0x09,		/*     Usage Page (Button) */
-    0x19, 0x01,		/*     Usage Minimum (1) */
-    0x29, 0x05,		/*     Usage Maximum (5) */
-    0x15, 0x00,		/*     Logical Minimum (0) */
-    0x25, 0x01,		/*     Logical Maximum (1) */
-    0x95, 0x05,		/*     Report Count (5) */
-    0x75, 0x01,		/*     Report Size (1) */
-    0x81, 0x02,		/*     Input (Data, Variable, Absolute) */
-    0x95, 0x01,		/*     Report Count (1) */
-    0x75, 0x03,		/*     Report Size (3) */
-    0x81, 0x01,		/*     Input (Constant) */
+    0x05, 0x0D,                    // USAGE_PAGE(Digitizers)
+    0x09, 0x04,                    // USAGE     (Touch Screen)
+    0xA1, 0x01,                    // COLLECTION(Application)
+	
+    // define the maximum amount of fingers that the device supports
+    0x09, 0x55,                    //   USAGE(Contact Count Maximum)
+    0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
+    0xB1, 0x02,                    //   FEATURE (Data,Var,Abs)
+    // define the actual amount of fingers that are concurrently touching the screen
+    0x09, 0x54,                    //   USAGE (Contact count)
+    0x95, 0x01,                    //   REPORT_COUNT(1)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+	
+	// declare a finger collection
+    0x09, 0x22,                    //   USAGE (Finger)
+    0xA1, 0x02,                    //   COLLECTION (Logical)
+    // declare an identifier for the finger
+    0x09, 0x51,                    //     USAGE (Contact Identifier)
+    0x75, 0x08,                    //     REPORT_SIZE (8)
+    0x95, 0x01,                    //     REPORT_COUNT (1)
+    0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+    // declare Tip Switch and In Range
+    0x09, 0x42,                    //     USAGE (Tip Switch)
+    0x09, 0x32,                    //     USAGE (In Range)
+    0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
+    0x25, 0x01,                    //     LOGICAL_MAXIMUM (1)
+    0x75, 0x01,                    //     REPORT_SIZE (1)
+    0x95, 0x02,                    //     REPORT_COUNT(1)
+    0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+    // declare the remaining 6 bits of the first data byte as constant -> the driver will ignore them
+    0x95, 0x06,                    //     REPORT_COUNT (6)
+    0x81, 0x03,                    //     INPUT (Cnst,Ary,Abs)
+    // define absolute X and Y coordinates of 16 bit each (percent values multiplied with 100)
     0x05, 0x01,		/*     Usage Page (Generic Desktop) */
     0x09, 0x30,		/*     Usage (X) */
     0x09, 0x31,		/*     Usage (Y) */
@@ -510,17 +531,8 @@ static const uint8_t qemu_tablet_hid_report_descriptor[] = {
     0x75, 0x10,		/*     Report Size (16) */
     0x95, 0x02,		/*     Report Count (2) */
     0x81, 0x02,		/*     Input (Data, Variable, Absolute) */
-    0x05, 0x01,		/*     Usage Page (Generic Desktop) */
-    0x09, 0x38,		/*     Usage (Wheel) */
-    0x15, 0x81,		/*     Logical Minimum (-0x7f) */
-    0x25, 0x7f,		/*     Logical Maximum (0x7f) */
-    0x35, 0x00,		/*     Physical Minimum (same as logical) */
-    0x45, 0x00,		/*     Physical Maximum (same as logical) */
-    0x75, 0x08,		/*     Report Size (8) */
-    0x95, 0x01,		/*     Report Count (1) */
-    0x81, 0x06,		/*     Input (Data, Variable, Relative) */
-    0xc0,		/*   End Collection */
-    0xc0,		/* End Collection */
+    0xC0,                          //   END_COLLECTION
+    0xC0                           // END_COLLECTION
 };
 
 static const uint8_t qemu_keyboard_hid_report_descriptor[] = {
@@ -608,6 +620,7 @@ static void usb_hid_handle_control(USBDevice *dev, USBPacket *p,
         }
         break;
     case HID_GET_REPORT:
+        data[0] = REPORTID_TOUCH;
         if (hs->kind == HID_MOUSE || hs->kind == HID_TABLET) {
             p->actual_length = hid_pointer_poll(hs, data, length);
         } else if (hs->kind == HID_KEYBOARD) {
@@ -622,6 +635,7 @@ static void usb_hid_handle_control(USBDevice *dev, USBPacket *p,
         }
         break;
     case HID_GET_PROTOCOL:
+        // if (hs->kind == HID_TABLET) return;
         if (hs->kind != HID_KEYBOARD && hs->kind != HID_MOUSE) {
             goto fail;
         }
@@ -805,7 +819,7 @@ static void usb_tablet_class_initfn(ObjectClass *klass, const void *data)
     USBDeviceClass *uc = USB_DEVICE_CLASS(klass);
 
     uc->realize        = usb_tablet_realize;
-    uc->product_desc   = "QEMU USB Tablet";
+    uc->product_desc   = "QEMU USB Touch";
     dc->vmsd = &vmstate_usb_ptr;
     device_class_set_props(dc, usb_tablet_properties);
     set_bit(DEVICE_CATEGORY_INPUT, dc->categories);

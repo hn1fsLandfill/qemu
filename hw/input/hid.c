@@ -355,8 +355,11 @@ void hid_pointer_activate(HIDState *hs)
     }
 }
 
+int prev_state = 0;
+
 int hid_pointer_poll(HIDState *hs, uint8_t *buf, int len)
 {
+    // if(hs->kind == HID_TABLET) return 0;
     int dx, dy, dz, l;
     int index;
     HIDPointerEvent *e;
@@ -390,6 +393,23 @@ int hid_pointer_poll(HIDState *hs, uint8_t *buf, int len)
         hs->n--;
     }
 
+    if((e->buttons_state & 0x01) == 0 && (prev_state & 0x01) == 0) {
+        //printf("Bailing out early!\n");
+        prev_state = e->buttons_state;
+        return 0;
+    }
+
+    if(dx > 32767 || dx < 0) {
+        //printf("Bailing out early!\n");
+        prev_state = e->buttons_state;
+        return 0;
+    }
+    if(dy > 32767  || dy < 0) {
+        //printf("Bailing out early!\n");
+        prev_state = e->buttons_state;
+        return 0;
+    }
+
     /* Appears we have to invert the wheel direction */
     dz = 0 - dz;
     l = 0;
@@ -410,9 +430,28 @@ int hid_pointer_poll(HIDState *hs, uint8_t *buf, int len)
         break;
 
     case HID_TABLET:
+        //if (len > l) {
+        //    buf[l++] = e->buttons_state;
+        //}
+
+        // report id?
+        //buf[l++] = 0x04;
+
+        printf("0x%x %d %d\n",e->buttons_state, dx, dy);
         if (len > l) {
-            buf[l++] = e->buttons_state;
+            buf[l++] = 1;
         }
+        if (len > l) {
+            buf[l++] = 0;
+        }
+
+        // tip state
+        if (len > l && e->buttons_state & 0x01) {
+            buf[l++] = 0xff;
+        } else if(len > l) {
+            buf[l++] = 0;
+        }
+
         if (len > l) {
             buf[l++] = dx & 0xff;
         }
@@ -425,14 +464,16 @@ int hid_pointer_poll(HIDState *hs, uint8_t *buf, int len)
         if (len > l) {
             buf[l++] = dy >> 8;
         }
-        if (len > l) {
-            buf[l++] = dz;
-        }
+        // if (len > l) {
+        //     buf[l++] = dz;
+        // }
         break;
 
     default:
         abort();
     }
+
+    prev_state = e->buttons_state;
 
     return l;
 }

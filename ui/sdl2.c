@@ -205,6 +205,7 @@ static void sdl_update_caption(struct sdl2_console *scon)
 
 static void sdl_hide_cursor(struct sdl2_console *scon)
 {
+    return;
     if (scon->opts->has_show_cursor && scon->opts->show_cursor) {
         return;
     }
@@ -219,6 +220,7 @@ static void sdl_hide_cursor(struct sdl2_console *scon)
 
 static void sdl_show_cursor(struct sdl2_console *scon)
 {
+    return;
     if (scon->opts->has_show_cursor && scon->opts->show_cursor) {
         return;
     }
@@ -239,6 +241,7 @@ static void sdl_show_cursor(struct sdl2_console *scon)
 
 static void sdl_grab_start(struct sdl2_console *scon)
 {
+    return;
     QemuConsole *con = scon ? scon->dcl.con : NULL;
 
     if (!con || !qemu_console_is_graphic(con)) {
@@ -267,6 +270,7 @@ static void sdl_grab_start(struct sdl2_console *scon)
 
 static void sdl_grab_end(struct sdl2_console *scon)
 {
+    return;
     SDL_SetWindowGrab(scon->real_window, SDL_FALSE);
     gui_grab = 0;
     sdl_show_cursor(scon);
