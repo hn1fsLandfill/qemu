@@ -437,7 +437,7 @@ int hid_pointer_poll(HIDState *hs, uint8_t *buf, int len)
         // report id?
         //buf[l++] = 0x04;
 
-        printf("0x%x %d %d\n",e->buttons_state, dx, dy);
+        // printf("0x%x %d %d\n",e->buttons_state, dx, dy);
         if (len > l) {
             buf[l++] = 1;
         }
