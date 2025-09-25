@@ -240,12 +240,12 @@ static uint32_t vmmouse_ioport_read(void *opaque, uint32_t addr)
         case VMMOUSE_READ_ID:
             vmmouse_read_id(s);
             break;
-        //case VMMOUSE_REQUEST_RELATIVE:
-        //    vmmouse_request_relative(s);
-        //    break;
-        //case VMMOUSE_REQUEST_ABSOLUTE:
-        //    vmmouse_request_absolute(s);
-        //    break;
+        case VMMOUSE_REQUEST_RELATIVE:
+            vmmouse_request_relative(s);
+            break;
+        case VMMOUSE_REQUEST_ABSOLUTE:
+            vmmouse_request_absolute(s);
+            break;
         default:
             printf("vmmouse: unknown command %x\n", data[1]);
             break;
@@ -312,9 +312,9 @@ static void vmmouse_realizefn(DeviceState *dev, Error **errp)
         return;
     }
 
-    //vmport_register(VMPORT_CMD_VMMOUSE_STATUS, vmmouse_ioport_read, s);
-    //vmport_register(VMPORT_CMD_VMMOUSE_COMMAND, vmmouse_ioport_read, s);
-    //vmport_register(VMPORT_CMD_VMMOUSE_DATA, vmmouse_ioport_read, s);
+    vmport_register(VMPORT_CMD_VMMOUSE_STATUS, vmmouse_ioport_read, s);
+    vmport_register(VMPORT_CMD_VMMOUSE_COMMAND, vmmouse_ioport_read, s);
+    vmport_register(VMPORT_CMD_VMMOUSE_DATA, vmmouse_ioport_read, s);
 }
 
 static const Property vmmouse_properties[] = {
@@ -344,4 +344,11 @@ static void vmmouse_register_types(void)
     type_register_static(&vmmouse_info);
 }
 
-type_init(vmmouse_register_types)
+// shush unused function error
+void h329074239783(void);
+
+void h329074239783(void) {
+    vmmouse_register_types();
+}
+
+// type_init(vmmouse_register_types)
