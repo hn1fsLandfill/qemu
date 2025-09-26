@@ -1,3 +1,11 @@
+====================================
+QEMU for Windows Phone stuff I guess
+====================================
+
+Head to HELP.md for a guide
+
+Original README:
+
 ===========
 QEMU README
 ===========
