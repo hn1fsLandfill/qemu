@@ -447,9 +447,9 @@ int hid_pointer_poll(HIDState *hs, uint8_t *buf, int len)
 
         // tip state
         if (len > l && e->buttons_state & 0x01) {
-            buf[l++] = 0xff;
+            buf[l++] = 3;
         } else if(len > l) {
-            buf[l++] = 0;
+            buf[l++] = 2;
         }
 
         if (len > l) {
